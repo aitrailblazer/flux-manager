@@ -1,6 +1,8 @@
-# Flux Manager
+# README for Flux Manager
 
-Flux Manager is a Go application designed to automate YAML distribution and kubeconfig management across multiple Kubernetes clusters. It replaces existing bash scripts to offer improved flexibility, scalability, and maintainability.
+## Overview
+
+Flux Manager is a Go application designed to automate YAML distribution and kubeconfig management across multiple Kubernetes clusters. It replaces existing bash scripts, offering improved flexibility, scalability, and maintainability.
 
 ## Key Features
 
@@ -63,33 +65,6 @@ go test ./...
 
 Detailed documentation is available in the `docs` folder, including setup instructions, configuration options, and usage examples.
 
-## Cluster Configuration
-
-Example of a cluster configuration file (`backend-services-flux-blueprint-cluster01.yaml`):
-
-```yaml
-apiVersion: v1
-clusters:
-- cluster:
-    certificate-authority-data: LS0tL
-    server: https://k-2bvk8irdtbvf4b2ko92tttfmd72i41du-kapi.ssnc-corp.cloud:6443
-  name: k-2bvk8irdtbvf4b2ko92tttfmd72i41du
-contexts:
-- context:
-    cluster: k-2bvk8irdtbvf4b2ko92tttfmd72i41du
-    user: webhook
-  name: webhook@k-2bvk8irdtbvf4b2ko92tttfmd72i41du
-current-context: webhook@k-2bvk8irdtbvf4b2ko92tttfmd72i41du
-kind: Config
-preferences: {}
-users:
-- name: webhook
-  user:
-    token: ${SSCCLOUD_APIKEY}
-```
-
-Replace `${SSCCLOUD_APIKEY}` with your actual token for authentication.
-
 ## Bootstrap Script
 
 The `bootstrap_flux.sh` script is used to bootstrap Flux for multiple clusters.
@@ -97,23 +72,28 @@ The `bootstrap_flux.sh` script is used to bootstrap Flux for multiple clusters.
 ```bash
 #!/usr/bin/env bash
 
+# Define an associative array for clusters, their specific kubeconfig, and Flux paths
 declare -A clusters
 clusters["cluster1"]="$KUBECONFIG_DIR/backend-services-flux-blueprint-cluster01.yaml ./clusters/backend-services-flux-blueprint-cluster01"
 clusters["cluster2"]="$KUBECONFIG_DIR/backend-services-flux-blueprint-cluster02.yaml ./clusters/backend-services-flux-blueprint-cluster02"
 clusters["cluster3"]="$KUBECONFIG_DIR/backend-services-flux-blueprint-cluster03.yaml ./clusters/backend-services-flux-blueprint-cluster03"
 
+# Function to bootstrap Flux
 bootstrap_flux() {
     local cluster_name=$1
     local kubeconfig_path=$2
     local flux_path=$3
 
+    # Set KUBECONFIG to the specific file
     export KUBECONFIG=$kubeconfig_path
 
     echo "Using kubeconfig: $KUBECONFIG"
     echo "Bootstrapping Flux for $cluster_name at path $flux_path..."
 
+    # Switch context to the cluster
     kubectl config use-context $cluster_name
 
+    # Flux bootstrap command tailored for each cluster
     flux bootstrap github \
         --owner=cloud \
         --repository=backend-services-flux-blueprint-deploy \
@@ -123,13 +103,90 @@ bootstrap_flux() {
         --token-auth \
         --namespace=flux-system
 
+    # Reset KUBECONFIG if needed, or unset to use default
     unset KUBECONFIG
 }
 
+# Loop through each cluster and bootstrap Flux
 for cluster in "${!clusters[@]}"; do
     read kubeconfig_path flux_path <<< "${clusters[$cluster]}"
     bootstrap_flux "$cluster" "$kubeconfig_path" "$flux_path"
 done
 ```
 
-By using Flux Manager, you can enhance your automation capabilities for managing Kubernetes clusters, ensuring more reliable and scalable operations.
+## Cluster Configuration File: `clusters.csv`
+
+The `clusters.csv` file contains details about each cluster:
+
+```csv
+name,update,environment
+uat-sre-kc,true,UAT
+uat-sre-stl,false,UAT
+managed-k8s-capi-uat-kc,false,UAT
+managed-k8s-capi-uat-stl,false,UAT
+oculus,false,oculus
+cloud-services-bootstrap-bar,false,PROD
+cloud-services-bootstrap-cam,false,PROD
+cloud-services-capv-stl,false,PROD
+cloud-services-capv-wc,false,PROD
+cloud-services-lon,false,PROD
+cloud-services-vie,false,PROD
+cloud-services-wal,false,PROD
+cloud-services-ykt,false,PROD
+managed-k8s-capi-bootstrap-bar,false,PROD
+managed-k8s-capi-bootstrap-cam,false,PROD
+managed-k8s-capi-prod-cam,false,PROD
+managed-k8s-capi-prod-kc,false,PROD
+managed-k8s-capi-prod-lon,false,PROD
+managed-k8s-capi-prod-stl,false,PROD
+managed-k8s-capi-prod-vie,false,PROD
+managed-k8s-capi-prod-wales,false,PROD
+managed-k8s-capi-prod-ykt,false,PROD
+```
+
+## Bootstrap Script: `flux-bootstrap-csv.sh`
+
+The `flux-bootstrap-csv.sh` script automates the process of switching contexts and bootstrapping Flux based on the entries in `clusters.csv`.
+
+```bash
+#!/bin/bash
+
+# Path to the CSV file
+CSV_FILE="clusters.csv"
+TEMP_FILE="temp.csv"
+
+# Create a temporary file to store updated CSV content
+touch $TEMP_FILE
+
+# Read the CSV file line by line
+while IFS=, read -r name execute rest_of_line; do
+    
+    # Skip the header row if it exists 
+    if [[ "$name" == "name" ]]; then 
+        echo "$name,$execute,$rest_of_line" >> $TEMP_FILE 
+        continue 
+    fi 
+
+    if [[ "$execute" == "true" ]]; then 
+        # Switch cluster context 
+        echo "Switching to cluster $name" 
+        kubectl config use-context $name 
+        
+        # Run the flux bootstrap command with the name from the CSV 
+        echo "$GITHUB_TOKEN" | flux bootstrap git --url=https://code.ssnc.dev/cloud/backend-services-flux-deploy --branch=main --path=clusters/"$name" --token-auth 
+
+        # Set execute to false after running the command 
+        execute="false" 
+    fi 
+
+    # Write the line to the temporary file 
+    echo "$name,$execute,$rest_of_line" >> $TEMP_FILE 
+
+done < "$CSV_FILE"
+
+# Replace the original CSV file with the updated content 
+mv $TEMP_FILE $CSV_FILE 
+echo "**NOTE** Your cluster context has probably changed!"
+```
+
+By using Flux Manager along with these scripts and configurations, you can enhance your automation capabilities for managing Kubernetes clusters efficiently.
