@@ -1,9 +1,7 @@
-Here's a README file for the Flux Manager application:
+Here's the README file for Flux Manager:
 
 ```markdown
 # Flux Manager
-
-## Overview
 
 Flux Manager is a Go application designed to automate YAML distribution and kubeconfig management across multiple Kubernetes clusters. It replaces existing bash scripts to offer improved flexibility, scalability, and maintainability.
 
@@ -11,7 +9,7 @@ Flux Manager is a Go application designed to automate YAML distribution and kube
 
 - **YAML Distribution:**
   - Distributes static and templated YAML files to specified cluster folders.
-  
+
 - **Kubeconfig Management:**
   - Manages kubeconfig files, including webhook key insertion and context name standardization.
 
@@ -82,14 +80,6 @@ go test ./...
 ## Documentation
 
 Detailed documentation is available in the `docs` folder, including setup instructions, configuration options, and usage examples.
-
-## Contribution
-
-Contributions are welcome! Please read the `CONTRIBUTING.md` for guidelines.
-
-## License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ---
 
