@@ -1,34 +1,32 @@
-Here's the README file for Flux Manager:
-
 # Flux Manager
 
 Flux Manager is a Go application designed to automate YAML distribution and kubeconfig management across multiple Kubernetes clusters. It replaces existing bash scripts to offer improved flexibility, scalability, and maintainability.
 
 ## Key Features
 
-- **YAML Distribution:**
-  - Distributes static and templated YAML files to specified cluster folders.
+- **YAML Distribution:**  
+  Distributes static and templated YAML files to specified cluster folders.
 
-- **Kubeconfig Management:**
-  - Manages kubeconfig files, including webhook key insertion and context name standardization.
+- **Kubeconfig Management:**  
+  Manages kubeconfig files, including webhook key insertion and context name standardization.
 
-- **Cluster Context Management:**
-  - Standardizes context names and facilitates context switching for per-cluster updates.
+- **Cluster Context Management:**  
+  Standardizes context names and facilitates context switching for per-cluster updates.
 
-- **Data Handling:**
-  - Reads cluster details from a `clusters.csv` file for streamlined operations.
+- **Data Handling:**  
+  Reads cluster details from a `clusters.csv` file for streamlined operations.
 
-- **Script Conversion:**
-  - Converts existing bash script functionality to Go, including Flux installation and upgrades.
+- **Script Conversion:**  
+  Converts existing bash script functionality to Go, including Flux installation and upgrades.
 
-- **Error Handling and Logging:**
-  - Implements robust error handling and detailed logging for all operations.
+- **Error Handling and Logging:**  
+  Implements robust error handling and detailed logging for all operations.
 
-- **Performance Optimization:**
-  - Optimized for efficient performance under varying loads.
+- **Performance Optimization:**  
+  Optimized for efficient performance under varying loads.
 
-- **Testing and Validation:**
-  - Comprehensive unit and integration tests ensure functionality correctness.
+- **Testing and Validation:**  
+  Comprehensive unit and integration tests ensure functionality correctness.
 
 ## Requirements
 
@@ -80,6 +78,29 @@ go test ./...
 
 Detailed documentation is available in the `docs` folder, including setup instructions, configuration options, and usage examples.
 
----
+## Example Kubeconfig
+
+To use a kubeconfig file for context switching, download the cluster config and replace the token placeholder with your actual token:
+
+```yaml
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: LS0tL    
+    server: https://k-2bvk8irdtbvf4b2ko92tttfmd72i41du-kapi.ssnc-corp.cloud:6443
+  name: k-2bvk8irdtbvf4b2ko92tttfmd72i41du
+contexts:
+- context:
+    cluster: k-2bvk8irdtbvf4b2ko92tttfmd72i41du
+    user: webhook
+  name: webhook@k-2bvk8irdtbvf4b2ko92tttfmd72i41du
+current-context: webhook@k-2bvk8irdtbvf4b2ko92tttfmd72i41du
+kind: Config
+preferences: {}
+users:
+- name: webhook
+  user:
+    token: YOUR_ACTUAL_TOKEN
+```
 
 By using Flux Manager, you can enhance your automation capabilities for managing Kubernetes clusters, ensuring more reliable and scalable operations.
