@@ -189,4 +189,29 @@ mv $TEMP_FILE $CSV_FILE
 echo "**NOTE** Your cluster context has probably changed!"
 ```
 
+## Example Kubeconfig: `backend-services-flux-blueprint-cluster01.yaml`
+
+```yaml
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: LS0tL    
+    server: https://k-2bvk8irdtbvf4b2ko92tttfmd72i41du-kapi.ssnc-corp.cloud:6443
+  name: k-2bvk8irdtbvf4b2ko92tttfmd72i41du
+contexts:
+- context:
+    cluster: k-2bvk8irdtbvf4b2ko92tttfmd72i41du
+    user: webhook
+  name: webhook@k-2bvk8irdtbvf4b2ko92tttfmd72i41du
+current-context: webhook@k-2bvk8irdtbvf4b2ko92tttfmd72i41du
+kind: Config
+preferences: {}
+users:
+- name: webhook
+  user:
+    token: ${SSCCLOUD_APIKEY}
+```
+
+Replace `${SSCCLOUD_APIKEY}` with your actual token for authentication.
+
 By using Flux Manager along with these scripts and configurations, you can enhance your automation capabilities for managing Kubernetes clusters efficiently.
