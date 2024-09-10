@@ -63,6 +63,33 @@ go test ./...
 
 Detailed documentation is available in the `docs` folder, including setup instructions, configuration options, and usage examples.
 
+## Cluster Configuration
+
+Example of a cluster configuration file (`backend-services-flux-blueprint-cluster01.yaml`):
+
+```yaml
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: LS0tL
+    server: https://k-2bvk8irdtbvf4b2ko92tttfmd72i41du-kapi.ssnc-corp.cloud:6443
+  name: k-2bvk8irdtbvf4b2ko92tttfmd72i41du
+contexts:
+- context:
+    cluster: k-2bvk8irdtbvf4b2ko92tttfmd72i41du
+    user: webhook
+  name: webhook@k-2bvk8irdtbvf4b2ko92tttfmd72i41du
+current-context: webhook@k-2bvk8irdtbvf4b2ko92tttfmd72i41du
+kind: Config
+preferences: {}
+users:
+- name: webhook
+  user:
+    token: ${SSCCLOUD_APIKEY}
+```
+
+Replace `${SSCCLOUD_APIKEY}` with your actual token for authentication.
+
 ## Bootstrap Script
 
 The `bootstrap_flux.sh` script is used to bootstrap Flux for multiple clusters.
@@ -70,28 +97,23 @@ The `bootstrap_flux.sh` script is used to bootstrap Flux for multiple clusters.
 ```bash
 #!/usr/bin/env bash
 
-# Define an associative array for clusters, their specific kubeconfig, and Flux paths
 declare -A clusters
 clusters["cluster1"]="$KUBECONFIG_DIR/backend-services-flux-blueprint-cluster01.yaml ./clusters/backend-services-flux-blueprint-cluster01"
 clusters["cluster2"]="$KUBECONFIG_DIR/backend-services-flux-blueprint-cluster02.yaml ./clusters/backend-services-flux-blueprint-cluster02"
 clusters["cluster3"]="$KUBECONFIG_DIR/backend-services-flux-blueprint-cluster03.yaml ./clusters/backend-services-flux-blueprint-cluster03"
 
-# Function to bootstrap Flux
 bootstrap_flux() {
     local cluster_name=$1
     local kubeconfig_path=$2
     local flux_path=$3
 
-    # Set KUBECONFIG to the specific file
     export KUBECONFIG=$kubeconfig_path
 
     echo "Using kubeconfig: $KUBECONFIG"
     echo "Bootstrapping Flux for $cluster_name at path $flux_path..."
 
-    # Switch context to the cluster
     kubectl config use-context $cluster_name
 
-    # Flux bootstrap command tailored for each cluster
     flux bootstrap github \
         --owner=cloud \
         --repository=backend-services-flux-blueprint-deploy \
@@ -101,17 +123,13 @@ bootstrap_flux() {
         --token-auth \
         --namespace=flux-system
 
-    # Reset KUBECONFIG if needed, or unset to use default
     unset KUBECONFIG
 }
 
-# Loop through each cluster and bootstrap Flux
 for cluster in "${!clusters[@]}"; do
     read kubeconfig_path flux_path <<< "${clusters[$cluster]}"
     bootstrap_flux "$cluster" "$kubeconfig_path" "$flux_path"
 done
 ```
-
----
 
 By using Flux Manager, you can enhance your automation capabilities for managing Kubernetes clusters, ensuring more reliable and scalable operations.
